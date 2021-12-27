@@ -10,6 +10,7 @@ using CoreImage;
 using Foundation;
 using Uno.Extensions;
 using Windows.UI.Xaml.Controls;
+using Uno.UI.Xaml.Media;
 
 #if NET6_0_OR_GREATER
 using ObjCRuntime;
@@ -133,7 +134,7 @@ namespace Windows.UI.Xaml.Shapes
 				outerLayer.FillRule = CAShapeLayer.FillRuleEvenOdd;
 				outerLayer.LineWidth = 0;
 
-				
+
 				var path = GetRoundedRect(cornerRadius, innerCornerRadius, area, adjustedArea);
 				var innerPath = GetRoundedPath(cornerRadius, adjustedArea);
 				var outerPath = GetRoundedPath(cornerRadius, area);
@@ -220,16 +221,33 @@ namespace Windows.UI.Xaml.Shapes
 				}
 				else if (borderBrush is GradientBrush gradientBorder)
 				{
-					var fillMask = new CAShapeLayer()
+					if (gradientBorder is LinearGradientBrush linearGradientBrush &&
+						BorderGradientBrushHelper.CanApplySolidColorRendering(linearGradientBrush) &&
+						gradientBorder.RelativeTransform != null)
 					{
-						Path = path,
-						Frame = area,
-						// We only use the fill color to create the mask area
-						FillColor = _Color.White.CGColor,
-					};
+						var majorStop = BorderGradientBrushHelper.GetMajorStop(linearGradientBrush);
+						var borderColor = Color.FromArgb((byte)(linearGradientBrush.Opacity * majorStop.Color.A), majorStop.Color.R, majorStop.Color.G, majorStop.Color.B);
 
-					var borderLayerIndex = parent.Sublayers.Length;
-					CreateGradientBrushLayers(area, area, parent, sublayers, ref borderLayerIndex, gradientBorder, fillMask);
+						Brush.AssignAndObserveBrush(new SolidColorBrush(borderColor), color =>
+						{
+							outerLayer.StrokeColor = color;
+							outerLayer.FillColor = color;
+						})
+						.DisposeWith(disposables);
+					}
+					else
+					{
+						var fillMask = new CAShapeLayer()
+						{
+							Path = path,
+							Frame = area,
+							// We only use the fill color to create the mask area
+							FillColor = _Color.White.CGColor,
+						};
+
+						var borderLayerIndex = parent.Sublayers.Length;
+						CreateGradientBrushLayers(area, area, parent, sublayers, ref borderLayerIndex, gradientBorder, fillMask);
+					}
 				}
 
 				parent.Mask = new CAShapeLayer()
@@ -320,20 +338,32 @@ namespace Windows.UI.Xaml.Shapes
 					{
 						Brush.AssignAndObserveBrush(borderBrush, c => layer.FillColor = c)
 							.DisposeWith(disposables);
-
 					}
 					else if (borderBrush is GradientBrush gradientBorder)
 					{
-						var fillMask = new CAShapeLayer()
+						if (gradientBorder is LinearGradientBrush linearGradientBrush &&
+							BorderGradientBrushHelper.CanApplySolidColorRendering(linearGradientBrush) &&
+							gradientBorder.RelativeTransform != null)
 						{
-							Path = borderPath,
-							Frame = area,
-							// We only use the fill color to create the mask area
-							FillColor = _Color.White.CGColor,
-						};
+							var majorStop = BorderGradientBrushHelper.GetMajorStop(linearGradientBrush);
+							var borderColor = Color.FromArgb((byte)(linearGradientBrush.Opacity * majorStop.Color.A), majorStop.Color.R, majorStop.Color.G, majorStop.Color.B);
 
-						var borderLayerIndex = parent.Sublayers.Length;
-						CreateGradientBrushLayers(area, area, parent, sublayers, ref borderLayerIndex, gradientBorder, fillMask);
+							Brush.AssignAndObserveBrush(new SolidColorBrush(borderColor), c => layer.FillColor = c)
+								.DisposeWith(disposables);
+						}
+						else
+						{
+							var fillMask = new CAShapeLayer()
+							{
+								Path = borderPath,
+								Frame = area,
+								// We only use the fill color to create the mask area
+								FillColor = _Color.White.CGColor,
+							};
+
+							var borderLayerIndex = parent.Sublayers.Length;
+							CreateGradientBrushLayers(area, area, parent, sublayers, ref borderLayerIndex, gradientBorder, fillMask);
+						}
 					}
 
 				}
@@ -351,7 +381,7 @@ namespace Windows.UI.Xaml.Shapes
 					FillColor = _Color.White.CGColor,
 				};
 
-				
+
 				state.BoundsPath = outerPath;
 			}
 
