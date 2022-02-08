@@ -1,4 +1,5 @@
-﻿using System;
+﻿#pragma warning disable CS0219 // Variable is assigned but its value is never used
+using System;
 using System.Collections.Generic;
 using System.Text;
 using BenchmarkDotNet.Attributes;
@@ -42,3 +43,4 @@ namespace SamplesApp.Benchmarks.Suite.Windows_UI.ColorBench
 		}
 	}
 }
+#pragma warning restore CS0219 // Variable is assigned but its value is never used
