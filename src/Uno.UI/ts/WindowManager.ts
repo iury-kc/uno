@@ -586,6 +586,51 @@ namespace Uno.UI {
 			return true;
 		}
 
+		public setSolidColorBorder(htmlId: number, colorHex: string, width: string) {
+			const element = this.getView(htmlId);
+
+			const elementStyle = element.style;
+
+			elementStyle.setProperty("border", "");
+			elementStyle.setProperty("border-style", "solid");
+			elementStyle.setProperty("border-color", colorHex);
+			elementStyle.setProperty("border-width", width);
+
+			return true;
+		}
+
+		/**
+		* Set border to solid color brush.
+		*/
+		public setSolidColorBorderNative(pParams: number): boolean {
+
+			const params = WindowManagerSetSolidColorBorderParams.unmarshal(pParams);
+			return this.setSolidColorBorder(params.HtmlId, params.ColorHex, params.Width);
+		}
+
+		public setGradientBorder(htmlId: number, borderImage: string, width: string) {
+			const element = this.getView(htmlId);
+
+			const elementStyle = element.style;
+			elementStyle.setProperty("border", "");
+			elementStyle.setProperty("border-style", "solid");
+			elementStyle.setProperty("border-color", "");
+			elementStyle.setProperty("border-image", borderImage);
+			elementStyle.setProperty("border-width", width);
+			elementStyle.setProperty("border-image-slice", "1");
+
+			return true;
+		}
+
+		/**
+		* Set border to gradient brush.
+		*/
+		public setGradientBorderNative(pParams: number): boolean {
+
+			const params = WindowManagerSetGradientBorderParams.unmarshal(pParams);
+			return this.setGradientBorder(params.HtmlId, params.BorderImage, params.Width);
+		}
+
 		public setArrangeProperties(elementId: number): string {
 			const element = this.getView(elementId);
 

@@ -150,6 +150,16 @@ namespace Windows.UI.Xaml
 			Uno.UI.Xaml.WindowManagerInterop.SetStyles(HtmlId, styles);
 		}
 
+		protected internal void SetSolidColorBorder(string colorHex, string borderWidth)
+		{
+			Uno.UI.Xaml.WindowManagerInterop.SetSolidColorBorder(HtmlId, colorHex, borderWidth);
+		}
+
+		protected internal void SetGradientBorder(string borderImage, string borderWidth)
+		{
+			Uno.UI.Xaml.WindowManagerInterop.SetGradientBorder(HtmlId, borderImage, borderWidth);
+		}
+
 		/// <summary>
 		/// Add/Set CSS classes to the HTML element.
 		/// </summary>
@@ -672,7 +682,7 @@ namespace Windows.UI.Xaml
 
 		private static KeyRoutedEventArgs PayloadToKeyArgs(object src, string payload)
 		{
-			return new KeyRoutedEventArgs(src, VirtualKeyHelper.FromKey(payload)) {CanBubbleNatively = true};
+			return new KeyRoutedEventArgs(src, VirtualKeyHelper.FromKey(payload)) { CanBubbleNatively = true };
 		}
 
 		private static RoutedEventArgs PayloadToFocusArgs(object src, string payload)
