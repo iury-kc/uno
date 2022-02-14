@@ -18,7 +18,7 @@ using Windows.UI.Xaml.Controls.Primitives;
 
 namespace Windows.UI.Xaml.Controls
 {
-	partial class NativeScrollContentPresenter : UnoTwoDScrollView, IShadowChildrenProvider, DependencyObject
+	partial class NativeScrollContentPresenter : UnoTwoDScrollView, IShadowChildrenProvider, DependencyObject, ILayouterElement
 	{
 		private static readonly List<View> _emptyList = new List<View>(0);
 
@@ -103,31 +103,48 @@ namespace Windows.UI.Xaml.Controls
 			}
 		}
 
-		//TODO generated code
+		ILayouter ILayouterElement.Layouter => _layouter;
+		Size ILayouterElement.LastAvailableSize => LayoutInformation.GetAvailableSize(this);
+		bool ILayouterElement.IsMeasureDirty => true;
+		bool ILayouterElement.IsFirstMeasureDone => false;
+		bool ILayouterElement.StretchAffectsMeasure => false;
+		bool ILayouterElement.IsMeasureDirtyPathDisabled => true;
+
 		protected override void OnMeasure(int widthMeasureSpec, int heightMeasureSpec)
 		{
-			var availableSize = ViewHelper.LogicalSizeFromSpec(widthMeasureSpec, heightMeasureSpec);
-
-			if (!double.IsNaN(Width) || !double.IsNaN(Height))
-			{
-				availableSize = new Size(
-					double.IsNaN(Width) ? availableSize.Width : Width,
-					double.IsNaN(Height) ? availableSize.Height : Height
-				);
-			}
-
-			var measuredSize = _layouter.Measure(availableSize);
-
-			measuredSize = measuredSize.LogicalToPhysicalPixels();
-
-			// Report our final dimensions.
-			SetMeasuredDimension(
-				(int)measuredSize.Width,
-				(int)measuredSize.Height
-			);
-
-			IFrameworkElementHelper.OnMeasureOverride(this);
+			((ILayouterElement)this).OnMeasureInternal(widthMeasureSpec, heightMeasureSpec);
 		}
+
+		void ILayouterElement.SetMeasuredDimensionInternal(int width, int height)
+		{
+			SetMeasuredDimension(width, height);
+		}
+
+		//TODO generated code
+		//protected override void OnMeasure(int widthMeasureSpec, int heightMeasureSpec)
+		//{
+		//	var availableSize = ViewHelper.LogicalSizeFromSpec(widthMeasureSpec, heightMeasureSpec);
+
+		//	if (!double.IsNaN(Width) || !double.IsNaN(Height))
+		//	{
+		//		availableSize = new Size(
+		//			double.IsNaN(Width) ? availableSize.Width : Width,
+		//			double.IsNaN(Height) ? availableSize.Height : Height
+		//		);
+		//	}
+
+		//	var measuredSize = _layouter.Measure(availableSize);
+
+		//	measuredSize = measuredSize.LogicalToPhysicalPixels();
+
+		//	// Report our final dimensions.
+		//	SetMeasuredDimension(
+		//		(int)measuredSize.Width,
+		//		(int)measuredSize.Height
+		//	);
+
+		//	IFrameworkElementHelper.OnMeasureOverride(this);
+		//}
 
 		partial void OnLayoutPartial(bool changed, int left, int top, int right, int bottom)
 		{
