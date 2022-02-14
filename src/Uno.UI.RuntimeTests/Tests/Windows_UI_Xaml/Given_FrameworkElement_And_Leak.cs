@@ -14,11 +14,14 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Private.Infrastructure;
 using Uno.Extensions;
+using Uno.UI.Extensions;
 using Uno.UI.RuntimeTests.Tests.Windows_UI_Xaml.Controls;
+using Windows.UI;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
+using Windows.UI.Xaml.Media;
 
 #if __MACOS__
 using AppKit;
@@ -136,7 +139,7 @@ namespace Uno.UI.RuntimeTests.Tests.Windows_UI_Xaml
 				// DispatcherConditionalDisposable to be executed
 				await TestServices.WindowHelper.WaitForIdle();
 
-				if(lastActiveControls != activeControls)
+				if (lastActiveControls != activeControls)
 				{
 					// Expand the timeout if the count has changed, as the
 					// GC may still be processing levels of the hierarcy on iOS
@@ -278,6 +281,31 @@ namespace Uno.UI.RuntimeTests.Tests.Windows_UI_Xaml
 				Assert.IsFalse((SUT as IDependencyObjectStoreProvider).Store.AreHardReferencesEnabled);
 				Assert.IsNull(SUT.GetParent());
 			}
+		}
+
+		[TestMethod]
+		public void When_BorderLayerRenderer_Leaks()
+		{
+			var testBrush = new SolidColorBrush(Colors.Red);
+
+			var store = ((IDependencyObjectStoreProvider)testBrush).Store;
+			var property = store.GetPropertyDetails(SolidColorBrush.ColorProperty);
+			var originalCount = property.CallbackManager.CallbacksCount;
+			for (int i = 0; i < 15; i++)
+			{
+				TestServices.WindowHelper.WindowContent =
+					new Button()
+					{
+						Content = "Test",
+						Background = testBrush,
+						BorderBrush = testBrush,
+						BorderThickness = new Thickness(2)
+					};
+			}
+			// Remove the last button
+			TestServices.WindowHelper.WindowContent = new Button();
+
+			Assert.AreEqual(originalCount, property.CallbackManager.CallbacksCount);
 		}
 
 		private class Holder
