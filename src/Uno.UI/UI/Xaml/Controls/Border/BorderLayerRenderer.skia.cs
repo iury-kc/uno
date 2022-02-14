@@ -16,23 +16,21 @@ using Windows.UI.Xaml.Controls;
 
 namespace Windows.UI.Xaml.Shapes
 {
-	internal class BorderLayerRenderer
+	internal partial class BorderLayerRenderer
 	{
-		private LayoutState _currentState;
+		private readonly SerialDisposable _layerDisposable = new SerialDisposable();
 
-		private SerialDisposable _layerDisposable = new SerialDisposable();
+		private LayoutState _currentState;
 
 		/// <summary>
 		/// Updates or creates a sublayer to render a border-like shape.
 		/// </summary>
-		/// <param name="owner">The parent layer to apply the shape</param>
 		/// <param name="background">The background brush</param>
 		/// <param name="borderThickness">The border thickness</param>
 		/// <param name="borderBrush">The border brush</param>
 		/// <param name="cornerRadius">The corner radius</param>
 		/// <param name="backgroundImage">The background image in case of a ImageBrush background</param>
 		public void UpdateLayer(
-			FrameworkElement owner,
 			Brush background,
 			BackgroundSizing backgroundSizing,
 			Thickness borderThickness,
@@ -42,7 +40,8 @@ namespace Windows.UI.Xaml.Shapes
 		)
 		{
 			// Bounds is captured to avoid calling twice calls below.
-			var area = new Rect(0, 0, owner.ActualWidth, owner.ActualHeight);
+			var size = _owner.ActualSize;
+			var area = new Rect(0, 0, size.X, size.Y);
 
 			var newState = new LayoutState(area, background, backgroundSizing, borderThickness, borderBrush, cornerRadius, backgroundImage);
 			var previousLayoutState = _currentState;
@@ -57,7 +56,7 @@ namespace Windows.UI.Xaml.Shapes
 				{
 
 					_layerDisposable.Disposable = null;
-					_layerDisposable.Disposable = InnerCreateLayer(owner, newState);
+					_layerDisposable.Disposable = InnerCreateLayer(_owner, newState);
 				}
 				else
 				{
@@ -170,7 +169,7 @@ namespace Windows.UI.Xaml.Shapes
 				{
 					backgroundArea = CreateImageLayer(compositor, disposables, borderThickness, adjustedArea, backgroundShape, backgroundArea, imgBackground);
 				}
-				else 
+				else
 				{
 					Brush.AssignAndObserveBrush(background, compositor, brush => backgroundShape.FillBrush = brush)
 						.DisposeWith(disposables);
@@ -197,9 +196,9 @@ namespace Windows.UI.Xaml.Shapes
 						var spriteShape = compositor.CreateSpriteShape();
 						var geometry = new SkiaGeometrySource2D();
 
-						// Border brush
-						Brush.AssignAndObserveBrush(borderBrush, compositor, brush => spriteShape.StrokeBrush = brush)
-								.DisposeWith(disposables);
+					// Border brush
+					Brush.AssignAndObserveBrush(borderBrush, compositor, brush => spriteShape.StrokeBrush = brush)
+						.DisposeWith(disposables);
 
 						builder(spriteShape, geometry.Geometry);
 						spriteShape.Geometry = compositor.CreatePathGeometry(new CompositionPath(geometry));
@@ -255,7 +254,7 @@ namespace Windows.UI.Xaml.Shapes
 						});
 					}
 				}
-				
+
 				sublayers.Add(shapeVisual);
 
 				// Must be inserted below the other subviews, which may happen when
@@ -291,13 +290,13 @@ namespace Windows.UI.Xaml.Shapes
 
 					var sourceImageSize = new Size(imageData.Value.Image.Width, imageData.Value.Image.Height);
 
-					// We reduce the adjustedArea again so that the image is inside the border (like in Windows)
-					var imageArea = adjustedArea.DeflateBy(borderThickness);
+				// We reduce the adjustedArea again so that the image is inside the border (like in Windows)
+				var imageArea = adjustedArea.DeflateBy(borderThickness);
 
 					backgroundArea = imgBackground.GetArrangedImageRect(sourceImageSize, imageArea);
 
-					// surfaceBrush.Offset = new Vector2((float)imageFrame.Left, (float)imageFrame.Top);
-					var matrix = Matrix3x2.CreateScale((float)(backgroundArea.Width / sourceImageSize.Width), (float)(backgroundArea.Height / sourceImageSize.Height));
+				// surfaceBrush.Offset = new Vector2((float)imageFrame.Left, (float)imageFrame.Top);
+				var matrix = Matrix3x2.CreateScale((float)(backgroundArea.Width / sourceImageSize.Width), (float)(backgroundArea.Height / sourceImageSize.Height));
 					matrix *= Matrix3x2.CreateTranslation((float)backgroundArea.Left, (float)backgroundArea.Top);
 
 					if (imgBackground.Transform != null)
