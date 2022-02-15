@@ -21,7 +21,7 @@ using Rect = Windows.Foundation.Rect;
 
 namespace Windows.UI.Xaml.Controls
 {
-	internal class BorderLayerRenderer
+	internal partial class BorderLayerRenderer
 	{
 		private const double __opaqueAlpha = 255;
 
@@ -40,7 +40,6 @@ namespace Windows.UI.Xaml.Controls
 		/// <param name="cornerRadius">The corner radius</param>
 		/// <param name="padding">The padding to apply on the content</param>
 		public void UpdateLayer(
-			FrameworkElement view,
 			Brush background,
 			BackgroundSizing backgroundSizing,
 			Thickness borderThickness,
@@ -49,7 +48,7 @@ namespace Windows.UI.Xaml.Controls
 			Thickness padding,
 			bool willUpdateMeasures = false)
 		{
-			var drawArea = new Rect(default, view.LayoutSlotWithMarginsAndAlignments.Size.LogicalToPhysicalPixels());
+			var drawArea = new Rect(default, _owner.LayoutSlotWithMarginsAndAlignments.Size.LogicalToPhysicalPixels());
 			var newState = new LayoutState(drawArea, background, borderThickness, borderBrush, cornerRadius, padding);
 			var previousLayoutState = _currentState;
 
@@ -68,7 +67,7 @@ namespace Windows.UI.Xaml.Controls
 			}
 
 			Action onImageSet = null;
-			var disposable = InnerCreateLayers(view, drawArea, background, backgroundSizing, borderThickness, borderBrush, cornerRadius, () => onImageSet?.Invoke());
+			var disposable = InnerCreateLayers(drawArea, background, backgroundSizing, borderThickness, borderBrush, cornerRadius, () => onImageSet?.Invoke());
 
 			// Most of the time we immediately dispose the previous layer. In the case where we're using an ImageBrush,
 			// and the backing image hasn't changed, we dispose the previous layer at the moment the new background is applied,
@@ -84,11 +83,11 @@ namespace Windows.UI.Xaml.Controls
 
 			if (willUpdateMeasures)
 			{
-				view.RequestLayout();
+				_owner.RequestLayout();
 			}
 			else
 			{
-				view.Invalidate();
+				_owner.Invalidate();
 			}
 
 			_currentState = newState;
@@ -103,8 +102,7 @@ namespace Windows.UI.Xaml.Controls
 			_currentState = null;
 		}
 
-		private static IDisposable InnerCreateLayers(
-			BindableView view,
+		private IDisposable InnerCreateLayers(
 			Rect drawArea,
 			Brush background,
 			BackgroundSizing backgroundSizing,
@@ -123,7 +121,7 @@ namespace Windows.UI.Xaml.Controls
 
 			if (cornerRadius != 0)
 			{
-				if ((view as UIElement)?.FrameRoundingAdjustment is { } fra)
+				if (_owner.FrameRoundingAdjustment is { } fra)
 				{
 					drawArea.Height += fra.Height;
 					drawArea.Width += fra.Width;
@@ -138,20 +136,20 @@ namespace Windows.UI.Xaml.Controls
 						{
 							//Copy the path because it will be disposed when we exit the using block
 							var pathCopy = new Path(backgroundPath);
-							var setBackground = DispatchSetImageBrushAsBackground(view, imageBrushBackground, drawArea, onImageSet, pathCopy);
+							var setBackground = DispatchSetImageBrushAsBackground(imageBrushBackground, drawArea, onImageSet, pathCopy);
 							disposables.Add(setBackground);
 						}
 						else if (background is AcrylicBrush acrylicBrush)
 						{
-							var apply = acrylicBrush.Subscribe(view, drawArea, backgroundPath);
+							var apply = acrylicBrush.Subscribe(_owner, drawArea, backgroundPath);
 							disposables.Add(apply);
 						}
 						else
 						{
 							var fillPaint = background?.GetFillPaint(drawArea) ?? new Paint() { Color = Android.Graphics.Color.Transparent };
-							ExecuteWithNoRelayout(view, v => v.SetBackgroundDrawable(Brush.GetBackgroundDrawable(background, drawArea, fillPaint, backgroundPath)));
+							ExecuteWithNoRelayout(v => v.SetBackgroundDrawable(Brush.GetBackgroundDrawable(background, drawArea, fillPaint, backgroundPath)));
 						}
-						disposables.Add(() => ExecuteWithNoRelayout(view, v => v.SetBackgroundDrawable(null)));
+						disposables.Add(() => ExecuteWithNoRelayout(v => v.SetBackgroundDrawable(null)));
 					}
 
 					if (borderThickness != Thickness.Empty && borderBrush != null && !(borderBrush is ImageBrush))
@@ -172,8 +170,8 @@ namespace Windows.UI.Xaml.Controls
 
 							if (overlay != null)
 							{
-								overlay.SetBounds(0, 0, view.Width, view.Height);
-								SetOverlay(view, disposables, overlay);
+								overlay.SetBounds(0, 0, _owner.Width, _owner.Height);
+								SetOverlay(disposables, overlay);
 							}
 						}
 					}
@@ -191,20 +189,20 @@ namespace Windows.UI.Xaml.Controls
 
 					if (background is ImageBrush imageBrushBackground)
 					{
-						var setBackground = DispatchSetImageBrushAsBackground(view, imageBrushBackground, drawArea, onImageSet);
+						var setBackground = DispatchSetImageBrushAsBackground(imageBrushBackground, drawArea, onImageSet);
 						disposables.Add(setBackground);
 					}
 					else if (background is AcrylicBrush acrylicBrush)
 					{
-						var apply = acrylicBrush.Subscribe(view, drawArea, backgroundPath);
+						var apply = acrylicBrush.Subscribe(_owner, drawArea, backgroundPath);
 						disposables.Add(apply);
 					}
 					else
 					{
 						var fillPaint = background?.GetFillPaint(drawArea) ?? new Paint() { Color = Android.Graphics.Color.Transparent };
-						ExecuteWithNoRelayout(view, v => v.SetBackgroundDrawable(Brush.GetBackgroundDrawable(background, drawArea, fillPaint, backgroundPath)));
+						ExecuteWithNoRelayout(v => v.SetBackgroundDrawable(Brush.GetBackgroundDrawable(background, drawArea, fillPaint, backgroundPath)));
 					}
-					disposables.Add(() => ExecuteWithNoRelayout(view, v => v.SetBackgroundDrawable(null)));
+					disposables.Add(() => ExecuteWithNoRelayout(v => v.SetBackgroundDrawable(null)));
 				}
 
 				if (borderThickness != Thickness.Empty && !(borderBrush is ImageBrush))
@@ -213,12 +211,12 @@ namespace Windows.UI.Xaml.Controls
 					// Related Issue: https://github.com/unoplatform/uno/issues/6893
 					using (var strokePaint = borderBrush?.GetStrokePaint(drawArea) ?? new Paint() { Color = Android.Graphics.Color.Transparent })
 					{
-						var overlay = GetOverlayDrawable(strokePaint, physicalBorderThickness, new global::System.Drawing.Size(view.Width, view.Height));
+						var overlay = GetOverlayDrawable(strokePaint, physicalBorderThickness, new global::System.Drawing.Size(_owner.Width, _owner.Height));
 
 						if (overlay != null)
 						{
-							overlay.SetBounds(0, 0, view.Width, view.Height);
-							SetOverlay(view, disposables, overlay);
+							overlay.SetBounds(0, 0, _owner.Width, _owner.Height);
+							SetOverlay(disposables, overlay);
 						}
 					}
 				}
@@ -227,7 +225,7 @@ namespace Windows.UI.Xaml.Controls
 			return disposables;
 		}
 
-		private static void SetDrawableAlpha(Drawable drawable, int alpha)
+		private void SetDrawableAlpha(Drawable drawable, int alpha)
 		{
 #if __ANDROID_18__
 			if (Android.OS.Build.VERSION.SdkInt >= Android.OS.BuildVersionCodes.Kitkat)
@@ -241,13 +239,13 @@ namespace Windows.UI.Xaml.Controls
 			}
 		}
 
-		private static void SetOverlay(BindableView view, CompositeDisposable disposables, Drawable overlay)
+		private void SetOverlay(CompositeDisposable disposables, Drawable overlay)
 		{
 #if __ANDROID_18__
 			if (Android.OS.Build.VERSION.SdkInt >= Android.OS.BuildVersionCodes.Kitkat)
 			{
-				ExecuteWithNoRelayout(view, v => v.Overlay.Add(overlay));
-				disposables.Add(() => ExecuteWithNoRelayout(view, v => v.Overlay.Remove(overlay)));
+				ExecuteWithNoRelayout(v => v.Overlay.Add(overlay));
+				disposables.Add(() => ExecuteWithNoRelayout(v => v.Overlay.Remove(overlay)));
 			}
 			else
 #endif
@@ -258,7 +256,7 @@ namespace Windows.UI.Xaml.Controls
 
 				var list = new List<Drawable>();
 
-				var currentBackground = view.Background;
+				var currentBackground = _owner.Background;
 				if (currentBackground != null)
 				{
 					list.Add(currentBackground);
@@ -266,19 +264,19 @@ namespace Windows.UI.Xaml.Controls
 
 				list.Add(overlay);
 
-				view.SetBackgroundDrawable(new LayerDrawable(list.ToArray()));
-				disposables.Add(() => view.SetBackgroundDrawable(null));
+				_owner.SetBackgroundDrawable(new LayerDrawable(list.ToArray()));
+				disposables.Add(() => _owner.SetBackgroundDrawable(null));
 			}
 		}
 
-		private static IDisposable DispatchSetImageBrushAsBackground(BindableView view, ImageBrush background, Windows.Foundation.Rect drawArea, Action onImageSet, Path maskingPath = null)
-		{
+		private IDisposable DispatchSetImageBrushAsBackground(ImageBrush background, Windows.Foundation.Rect drawArea, Action onImageSet, Path maskingPath = null)
+		{ 
 			var disposable = new CompositeDisposable();
 			Dispatch(
-				view?.Dispatcher,
+				_owner?.Dispatcher,
 				async ct =>
 					{
-						var bitmapDisposable = await SetImageBrushAsBackground(ct, view, background, drawArea, maskingPath, onImageSet);
+						var bitmapDisposable = await SetImageBrushAsBackground(ct, _owner, background, drawArea, maskingPath, onImageSet);
 						disposable.Add(bitmapDisposable);
 					}
 			)
@@ -288,7 +286,7 @@ namespace Windows.UI.Xaml.Controls
 		}
 
 		//Load bitmap from ImageBrush and set it as a bitmapDrawable background on target view
-		private static async Task<IDisposable> SetImageBrushAsBackground(CancellationToken ct, BindableView view, ImageBrush background, Windows.Foundation.Rect drawArea, Path maskingPath, Action onImageSet)
+		private async Task<IDisposable> SetImageBrushAsBackground(CancellationToken ct, BindableView view, ImageBrush background, Windows.Foundation.Rect drawArea, Path maskingPath, Action onImageSet)
 		{
 			var bitmap = await background.GetBitmap(ct, drawArea, maskingPath);
 
@@ -303,7 +301,7 @@ namespace Windows.UI.Xaml.Controls
 
 			var bitmapDrawable = new BitmapDrawable(bitmap);
 			SetDrawableAlpha(bitmapDrawable, (int)(background.Opacity * __opaqueAlpha));
-			ExecuteWithNoRelayout(view, v => v.SetBackgroundDrawable(bitmapDrawable));
+			ExecuteWithNoRelayout(v => v.SetBackgroundDrawable(bitmapDrawable));
 
 			return Disposable.Create(() =>
 			{
@@ -312,16 +310,11 @@ namespace Windows.UI.Xaml.Controls
 			});
 		}
 
-		private static void ExecuteWithNoRelayout(BindableView target, Action<BindableView> action)
+		private void ExecuteWithNoRelayout(Action<BindableView> action)
 		{
-			if (target == null)
+			using (_owner.PreventRequestLayout())
 			{
-				throw new ArgumentNullException(nameof(target));
-			}
-
-			using (target.PreventRequestLayout())
-			{
-				action(target);
+				action(_owner);
 			}
 		}
 

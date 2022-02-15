@@ -27,10 +27,12 @@ namespace Windows.UI.Xaml.Controls
 	public partial class Border
 	{
 		private SerialDisposable _brushChanged = new SerialDisposable();
-		private BorderLayerRenderer _borderRenderer = new BorderLayerRenderer();
+		private BorderLayerRenderer _borderRenderer;
 
 		public Border()
 		{
+			_borderRenderer = new BorderLayerRenderer(this);
+
 			this.RegisterLoadActions(UpdateBorder, () => _borderRenderer.Clear());
 		}
 
@@ -69,7 +71,6 @@ namespace Windows.UI.Xaml.Controls
 			if (IsLoaded)
 			{
 				_borderRenderer.UpdateLayer(
-					this,
 					Background,
 					BackgroundSizing,
 					BorderThickness,
