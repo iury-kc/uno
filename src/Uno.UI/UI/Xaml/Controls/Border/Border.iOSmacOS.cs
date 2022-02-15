@@ -19,10 +19,12 @@ namespace Windows.UI.Xaml.Controls
 {
     public partial class Border
 	{
-		private readonly BorderLayerRenderer _borderRenderer = new BorderLayerRenderer();
+		private readonly BorderLayerRenderer _borderRenderer;
 
 		public Border()
 		{
+			_borderRenderer = new BorderLayerRenderer(this);
+
 			this.RegisterLoadActions(() => UpdateBorderLayer(), () => _borderRenderer.Clear());
 		}
 
@@ -46,7 +48,7 @@ namespace Windows.UI.Xaml.Controls
 					(Background as ImageBrush)?.ImageSource?.TryOpenSync(out backgroundImage);
 				}
 
-				if (_borderRenderer.UpdateLayer(this, Background, BackgroundSizing, BorderThickness, BorderBrush, CornerRadius, backgroundImage)
+				if (_borderRenderer.UpdateLayer(Background, BackgroundSizing, BorderThickness, BorderBrush, CornerRadius, backgroundImage)
 					is CGPath updated) // UpdateLayer may return null if there is no update
 				{
 					BoundsPath = updated;

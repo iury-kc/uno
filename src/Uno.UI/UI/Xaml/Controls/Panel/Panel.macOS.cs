@@ -15,10 +15,12 @@ namespace Windows.UI.Xaml.Controls
 {
 	public partial class Panel
 	{
-		private BorderLayerRenderer _borderRenderer = new BorderLayerRenderer();
+		private readonly BorderLayerRenderer _borderRenderer;
 
 		public Panel()
 		{
+			_borderRenderer = new BorderLayerRenderer(this);
+
 			Initialize();
 
 			this.RegisterLoadActions(() => UpdateBackground(), () => _borderRenderer.Clear());
@@ -102,7 +104,6 @@ namespace Windows.UI.Xaml.Controls
 				backgroundImage = backgroundImage ?? (Background as ImageBrush)?.ImageSource?.ImageData;
 
 				_borderRenderer.UpdateLayer(
-					this,
 					Background,
 					InternalBackgroundSizing,
 					BorderThicknessInternal,
