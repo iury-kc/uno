@@ -430,11 +430,11 @@ namespace Uno.UI.Xaml
 
 		#region SetSolidColorBorder
 
-		internal static void SetSolidColorBorder(IntPtr htmlId, string colorHex, string borderWidth)
+		internal static void SetSolidColorBorder(IntPtr htmlId, Color color, string borderWidth)
 		{
 			if (UseJavascriptEval)
 			{
-				var command = "Uno.UI.WindowManager.current.setSolidColorBorder(\"" + htmlId + "\", \"" + WebAssemblyRuntime.EscapeJs(colorHex) + "\", \"" + WebAssemblyRuntime.EscapeJs(borderWidth) + "\")";
+				var command = "Uno.UI.WindowManager.current.setSolidColorBorder(\"" + htmlId + "\", \"" + color.ToCssInteger() + "\", \"" + WebAssemblyRuntime.EscapeJs(borderWidth) + "\")";
 
 				WebAssemblyRuntime.InvokeJS(command);
 			}
@@ -443,7 +443,7 @@ namespace Uno.UI.Xaml
 				var parms = new WindowManagerSetSolidColorBorderParams
 				{
 					HtmlId = htmlId,
-					ColorHex = colorHex,
+					Color = color.ToCssInteger(),
 					Width = borderWidth,
 				};
 
@@ -457,8 +457,7 @@ namespace Uno.UI.Xaml
 		{
 			public IntPtr HtmlId;
 
-			[MarshalAs(TSInteropMarshaller.LPUTF8Str)]
-			public string ColorHex;
+			public uint Color;
 
 			[MarshalAs(TSInteropMarshaller.LPUTF8Str)]
 			public string Width;

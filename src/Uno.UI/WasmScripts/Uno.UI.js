@@ -765,12 +765,12 @@ var Uno;
                 element.style.setProperty(params.Name, this.handleToString(params.Value));
                 return true;
             }
-            setSolidColorBorder(htmlId, colorHex, width) {
+            setSolidColorBorder(htmlId, color, width) {
                 const element = this.getView(htmlId);
                 const elementStyle = element.style;
                 elementStyle.setProperty("border", "");
                 elementStyle.setProperty("border-style", "solid");
-                elementStyle.setProperty("border-color", colorHex);
+                elementStyle.setProperty("border-color", this.numberToCssColor(color));
                 elementStyle.setProperty("border-width", width);
                 return true;
             }
@@ -779,7 +779,7 @@ var Uno;
             */
             setSolidColorBorderNative(pParams) {
                 const params = WindowManagerSetSolidColorBorderParams.unmarshal(pParams);
-                return this.setSolidColorBorder(params.HtmlId, params.ColorHex, params.Width);
+                return this.setSolidColorBorder(params.HtmlId, params.Color, params.Width);
             }
             setGradientBorder(htmlId, borderImage, width) {
                 const element = this.getView(htmlId);
@@ -5282,13 +5282,7 @@ class WindowManagerSetSolidColorBorderParams {
             ret.HtmlId = Number(Module.getValue(pData + 0, "*"));
         }
         {
-            const ptr = Module.getValue(pData + 4, "*");
-            if (ptr !== 0) {
-                ret.ColorHex = String(Module.UTF8ToString(ptr));
-            }
-            else {
-                ret.ColorHex = null;
-            }
+            ret.Color = Module.HEAPU32[(pData + 4) >> 2];
         }
         {
             const ptr = Module.getValue(pData + 8, "*");

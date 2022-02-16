@@ -303,7 +303,7 @@ declare namespace Uno.UI {
         *
         */
         setStyleDoubleNative(pParams: number): boolean;
-        setSolidColorBorder(htmlId: number, colorHex: string, width: string): boolean;
+        setSolidColorBorder(htmlId: number, color: number, width: string): boolean;
         /**
         * Set border to solid color brush.
         */
@@ -1449,7 +1449,7 @@ declare class WindowManagerSetPropertyParams {
 }
 declare class WindowManagerSetSolidColorBorderParams {
     HtmlId: number;
-    ColorHex: string;
+    Color: number;
     Width: string;
     static unmarshal(pData: number): WindowManagerSetSolidColorBorderParams;
 }
