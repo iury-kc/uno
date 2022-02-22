@@ -157,10 +157,11 @@ date
 # export the simulator logs
 export LOG_FILEPATH=$UNO_UITEST_SCREENSHOT_PATH/_logs
 export TMP_LOG_FILEPATH=/tmp/DeviceLog-`date +"%Y%m%d%H%M%S"`.logarchive
+export LOG_FILEPATH_FULL=$LOG_FILEPATH/DeviceLog-$UITEST_AUTOMATED_GROUP-`date +"%Y%m%d%H%M%S"`.txt
 
 mkdir -p $LOG_FILEPATH
 xcrun simctl spawn booted log collect --output $TMP_LOG_FILEPATH
-log show --style syslog $TMP_LOG_FILEPATH > $LOG_FILEPATH/DeviceLog-$UITEST_AUTOMATED_GROUP-`date +"%Y%m%d%H%M%S"`.txt
+log show --style syslog $TMP_LOG_FILEPATH > $LOG_FILEPATH_FULL
 
 if [ ! -f "$UNO_ORIGINAL_TEST_RESULTS" ]; then
 	echo "ERROR: The test results file $UNO_ORIGINAL_TEST_RESULTS does not exist (did nunit crash ?)"
