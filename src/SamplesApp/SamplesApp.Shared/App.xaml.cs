@@ -402,9 +402,21 @@ namespace SamplesApp
 			var factory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
 			{
 #if __WASM__
-				builder.AddProvider(new Uno.Extensions.Logging.WebAssembly.WebAssemblyConsoleLoggerProvider());
+                builder.AddProvider(new global::Uno.Extensions.Logging.WebAssembly.WebAssemblyConsoleLoggerProvider());
+#elif __IOS__
+				builder.AddProvider(new global::Uno.Extensions.Logging.OSLogLoggerProvider());
+#elif NETFX_CORE
+                builder.AddDebug();
 #else
-				builder.AddConsole();
+                builder.AddConsole();
+#endif
+
+#if !DEBUG
+				// Exclude logs below this level
+				builder.SetMinimumLevel(LogLevel.Information);
+#else
+				// Exclude logs below this level
+				builder.SetMinimumLevel(LogLevel.Debug);
 #endif
 
 				builder.AddFilter("Uno", LogLevel.Warning);
