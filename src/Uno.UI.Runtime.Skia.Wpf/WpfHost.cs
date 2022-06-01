@@ -172,6 +172,8 @@ namespace Uno.UI.Skia.Platform
 			}
 
 			WinUI.Application.StartWithArguments(CreateApp);
+
+			WpfApplication.Current.MainWindow.Title = Windows.ApplicationModel.Package.Current.DisplayName;
 		}
 
 		private void MainWindow_StateChanged(object? sender, EventArgs e)
